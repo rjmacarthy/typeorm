@@ -1530,14 +1530,21 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
             limit = this.expressionMap.take;
         }
 
+        let orderBy = '';
+
+        if(this.connection.driver instanceof SqlServerDriver && (limit || offset) && Object.keys(this.expressionMap.allOrderBys).length === 0){
+            this.addOrderBy(`${this.alias}.${this.expressionMap.mainAlias!.metadata.primaryColumns[0].propertyPath}`);
+            orderBy = this.createOrderByExpression();
+        }
+
         if (this.connection.driver instanceof SqlServerDriver) {
 
             if (limit && offset)
-                return " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
+                return  orderBy + " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
             if (limit)
-                return " OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY";
+                return orderBy + " OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY";
             if (offset)
-                return " OFFSET " + offset + " ROWS";
+                return orderBy + " OFFSET " + offset + " ROWS";
 
         } else if (this.connection.driver instanceof MysqlDriver) {
 
